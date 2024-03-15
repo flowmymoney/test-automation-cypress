@@ -28,6 +28,21 @@ import {faker} from '@faker-js/faker';
 
 /**
  * @memberof cy
+ * @method getByDataTest
+ */
+Cypress.Commands.add('getByDataTest', (selector) => {
+    cy.get(`[data-test="${selector}"]`)
+})
+
+/**
+ * @memberof cy
+ * @method visitHomepage
+ */
+Cypress.Commands.add('visitHomepage', () => {
+    cy.visit('/')
+})
+/**
+ * @memberof cy
  * @method fillFormSignUp
  */
 Cypress.Commands.add('fillFormSignUp', ({
@@ -37,9 +52,30 @@ Cypress.Commands.add('fillFormSignUp', ({
     password = faker.internet.password({length: 8}),
     password_confirmation = null
 } = {}) => {
-    cy.get('[data-test="first_name"]').type(firstName)
-    cy.get('[data-test="last_name"]').type(lastName)
-    cy.get('[data-test="email"]').type(email)
-    cy.get('[data-test="password"]').type(password)
-    cy.get('[data-test="password_confirmation"]').type(password_confirmation != null ? password_confirmation : password)
+    cy.visitHomepage()
+    cy.getByDataTest('signup').click()
+    cy.getByDataTest('first_name').type(firstName)
+    cy.getByDataTest('last_name').type(lastName)
+    cy.getByDataTest('email').type(email)
+    cy.getByDataTest('password').type(password, {log: false})
+    cy.getByDataTest('password_confirmation').type(password_confirmation != null ? password_confirmation : password)
+    cy.getByDataTest('submit').click()
+})
+
+/**
+ * @memberof cy
+ * @method login
+ */
+Cypress.Commands.add('login', (
+    email = faker.internet.email(),
+    password = faker.internet.password()
+) => {
+    cy.session([email, password], () => {
+        cy.fillFormSignUp({email: email, password: password})
+    }, {
+        validate() {
+            cy.get('.mt-1.small.text-muted').should('have.text', email)
+        }, cacheAcrossSpecs: true
+    })
+    cy.visitHomepage()
 })
